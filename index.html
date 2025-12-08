@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pérdida de retroalimentación en una sociedad de alquileres</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8f6f1;
+      --card: #ffffff;
+      --border: #d6cfc3;
+      --text: #2b2420;
+      --muted: #6d645c;
+      --accent: #0f4c81;
+      --shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      --no-data: #d0d0d0;
+      --palette-1: #d4e4f4;
+      --palette-2: #a8c7e6;
+      --palette-3: #6a9fcc;
+      --palette-4: #3c7aaf;
+      --palette-5: #0f4c81;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Georgia", "Times New Roman", serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 24px 26px 46px;
+      box-shadow: var(--shadow);
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 6px 0 10px;
+      font-size: 34px;
+      font-weight: 800;
+      color: #1e1815;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 24px 0 6px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #201a17;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .story-block {
+      margin: 16px 0 28px;
+      padding: 0 0 8px;
+      border-radius: 0;
+      background: transparent;
+      border-left: 3px solid #c7b9a7;
+      padding-left: 14px;
+      box-shadow: none;
+    }
+
+    .story-block p {
+      margin: 0 0 16px;
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .inline-graphic {
+      margin: 18px 0 28px;
+      text-align: center;
+    }
+
+    .inline-graphic img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .kicker-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .kicker-primary { color: #d12f2f; font-weight: 700; }
+    .kicker-secondary { color: #5b554f; }
+
+    .save-share {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0 20px;
+    }
+
+    .save-share button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #d6cfc3;
+      background: #fdfdfc;
+      font-size: 12px;
+      color: #2f2a25;
+      cursor: pointer;
+    }
+
+    .save-share button:hover { background: #f3efe8; }
+
+    .chart-block {
+      margin: 12px 0 28px;
+      padding: 18px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .chart-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e2d3f;
+    }
+
+    .chart-subtitle {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chart-columns {
+      display: grid;
+      grid-template-columns: 0.5fr 1.2fr 1.2fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .bar-column h3,
+    .labels-column h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #d52b2b;
+    }
+
+    .labels-column h3 { color: transparent; user-select: none; }
+    .bar-column.salary h3 { color: #0f4c81; }
+
+    .label-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .label-item {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bar-row {
+      display: block;
+    }
+
+    .bar {
+      position: relative;
+      height: 24px;
+      border-radius: 6px;
+      background: #f1f4f8;
+      overflow: hidden;
+      border: 1px solid #e3e8ef;
+    }
+
+    .bar-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    .bar-fill.rent { background: #e53935; }
+    .bar-fill.salary { background: #1f5d8b; }
+
+    .chart-source {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .embed-block {
+      margin: 16px 0 22px;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .embed-block iframe {
+      width: 100%;
+      height: 520px; /* increased height so the embedded chart isn't clipped */
+      border: 0;
+    }
+
+    .line-chart-block {
+      margin: 18px 0 28px;
+      padding: 18px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .line-chart-title {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #421645;
+    }
+
+    .line-chart-subtitle {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .line-chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text);
+      flex-wrap: wrap;
+    }
+
+    .line-chart-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .line-legend-chip {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .viz-block {
+      margin: 16px 0 22px;
+      padding: 18px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .viz-header h3 {
+      margin: 0 0 4px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #1b2a3c;
+    }
+
+    .viz-header p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .viz-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .viz-card {
+      padding: 12px;
+      border-radius: 10px;
+      background: #f6f8fb;
+      border: 1px solid #e4e8ef;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .viz-card small {
+      display: block;
+      margin-top: 4px;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .viz-chart-title {
+      margin: 0 0 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #1b2a3c;
+    }
+
+    .paycheck-bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 48px;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .paycheck-bar {
+      position: relative;
+      height: 20px;
+      border-radius: 8px;
+      background: #eef1f6;
+      overflow: hidden;
+      border: 1px solid #e1e6ee;
+    }
+
+    .paycheck-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: 8px;
+      background: #0f4c81;
+      min-width: 80px;
+      padding-left: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .paycheck-fill.spain { background: #e53935; }
+
+    .paycheck-value {
+      text-align: right;
+      font-weight: 700;
+      color: #1b2a3c;
+    }
+
+    .updated-meta {
+      margin: 6px 0 14px;
+      font-size: 13px;
+      color: #6a6a6a;
+      font-style: italic;
+    }
+
+    .article-tail {
+      margin: 26px 0 32px;
+      padding: 0 4px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 14px;
+    }
+
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      border: 1px solid #cfc7bd;
+      background: #f6f2eb;
+      color: #3a312c;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .edition-card {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #d6cfc3;
+      background: #faf7f2;
+      border-radius: 10px;
+      margin: 14px 0 16px;
+      align-items: center;
+    }
+
+    .edition-thumb {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: #d9c9b5;
+      border: 1px solid #c9b9a5;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      color: #5a4a3d;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .edition-meta h4 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      color: #1f1916;
+    }
+
+    .edition-meta p {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #4a413a;
+      line-height: 1.45;
+    }
+
+    .edition-meta .pill-btn {
+      background: #fefefe;
+      border: 1px solid #b7c8d8;
+      color: #264e78;
+      font-weight: 700;
+    }
+
+    .share-row {
+      display: flex;
+      gap: 8px;
+      margin: 6px 0 18px;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #d6cfc3;
+      background: #fff;
+      font-size: 12px;
+      color: #2f2a25;
+    }
+
+    .newsletter-box {
+      padding: 14px;
+      border: 1px solid #d6cfc3;
+      background: #f4f0ea;
+      border-radius: 10px;
+      margin: 18px 0 24px;
+    }
+
+    .newsletter-box h4 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: #1f1916;
+    }
+
+    .newsletter-box p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #4a413a;
+    }
+
+    .newsletter-box button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #264e78;
+      background: #285a92;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .more-grid {
+      margin: 18px 0 30px;
+      border-top: 1px solid #d6cfc3;
+      padding-top: 12px;
+    }
+
+    .more-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: #1f1916;
+      margin: 0 0 10px;
+    }
+
+    .more-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .more-card {
+      border: 1px solid #e2dbcf;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .more-card h5 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: #1f1916;
+    }
+
+    .more-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #4a413a;
+      line-height: 1.4;
+    }
+
+    .site-footer {
+      background: #161616;
+      color: #d8d8d8;
+      padding: 30px 0 40px;
+      margin-top: 32px;
+      width: 100%;
+    }
+
+    .footer-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px;
+      width: 100%;
+    }
+
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: 14px 0;
+    }
+
+    .footer-links h6 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #f1f1f1;
+    }
+
+    .footer-links a {
+      display: block;
+      color: #c7c7c7;
+      text-decoration: none;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .footer-meta {
+      font-size: 11px;
+      color: #b5b5b5;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+@media (max-width: 720px) {
+  .page-shell { padding: 16px 14px 32px; margin: 0; box-shadow: none; }
+  .chart-columns { grid-template-columns: 1fr; }
+  .labels-column h3 { display: none; }
+  .label-item { font-size: 13px; }
+  .site-footer { padding: 20px 0 28px; }
+  .footer-shell { padding: 0 14px; }
+  .header-top-inner,
+  .header-main-inner { padding: 6px 12px; }
+}
+
+    .metric-block {
+      margin-bottom: 28px;
+      padding: 18px 18px 10px;
+      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(260px, 1.3fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .map-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .map-shell {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: inset 0 1px 0 #f2f4f8;
+      min-height: 520px;
+    }
+
+    .map-target svg { display: block; }
+
+    .map-search-btn {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--accent);
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .map-search-btn:hover { transform: translateY(-1px); }
+
+    .map-search-panel {
+      position: absolute;
+      top: 62px;
+      left: 14px;
+      width: 220px;
+      background: #f7f9fc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 10px;
+      display: none;
+      z-index: 5;
+    }
+
+    .map-search-panel.open { display: block; }
+
+    .map-search-panel input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #cfd6e2;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .map-search-panel .search-list {
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .map-search-panel button {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: none;
+      padding: 4px 2px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .year-select {
+      position: absolute;
+      top: 14px;
+      left: 66px;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 6;
+    }
+
+    .year-select-btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      min-width: 110px;
+      text-align: left;
+    }
+
+    .year-dropdown {
+      display: none;
+      position: absolute;
+      top: 46px;
+      left: 0;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      min-width: 110px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .year-dropdown.open { display: block; }
+
+    .year-dropdown button {
+      width: 100%;
+      border: none;
+      background: none;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .year-dropdown button:hover { background: #f0f4f9; }
+
+    .map-zoom {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .zoom-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .legend-steps {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 0 #f2f4f8;
+    }
+
+    .legend-title { font-weight: 700; color: #2a3a4f; margin-bottom: 10px; }
+
+    .legend-steps-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: stretch;
+    }
+
+    .legend-step {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      padding: 8px 6px;
+      border-radius: 8px;
+      background: #f7f9fc;
+      border: 1px solid #e5e9f1;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-chip {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .legend-caption {
+      font-size: 12px;
+      color: #727e90;
+      line-height: 1.5;
+    }
+
+    .state-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 18px 18px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .state-card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .state-card-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .state-card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .state-card-box {
+      background: #f7f9fc;
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid #e4e8ef;
+    }
+
+    .state-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #7e8a9b;
+      margin-bottom: 4px;
+    }
+
+    .state-card-value { font-size: 18px; font-weight: 800; }
+    .state-card-rank { font-size: 16px; font-weight: 700; color: var(--accent); }
+
+    .ranking-section {
+      margin-top: 14px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 14px 16px 16px;
+    }
+
+    .ranking-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .ranking-column-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #2b3b4e;
+    }
+
+    .ranking-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .ranking-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+
+    .ranking-list button {
+      border: none;
+      background: none;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .ranking-rank,
+    .ranking-value {
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      color: #526075;
+      text-align: right;
+    }
+
+    #view-all-btn,
+    #view-all-btn-fmd,
+    #view-all-btn-poorhlth {
+      margin-top: 4px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      font-size: 13px;
+      background: #f4f6fa;
+      cursor: pointer;
+    }
+
+    #view-all-btn:hover,
+    #view-all-btn-fmd:hover,
+    #view-all-btn-poorhlth:hover { background: #e9edf4; }
+
+    #all-states-modal,
+    #all-states-modal-fmd,
+    #all-states-modal-poorhlth {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    #all-states-modal.open,
+    #all-states-modal-fmd.open,
+    #all-states-modal-poorhlth.open { display: flex; }
+
+    .modal-panel {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 960px;
+      width: 96%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+    }
+
+    .modal-header {
+      padding: 14px 18px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e5e8ec;
+    }
+
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close {
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body { padding: 10px 18px 16px; overflow: auto; }
+
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    thead th {
+      text-align: left;
+      padding: 6px 4px;
+      border-bottom: 1px solid #dde2ea;
+      font-weight: 600;
+      color: #555;
+    }
+    tbody td { padding: 5px 4px; border-bottom: 1px solid #f1f2f6; }
+    .td-right { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .modal-state-button {
+      border: none;
+      background: none;
+      padding: 0;
+      color: var(--accent);
+      cursor: pointer;
+      text-align: left;
+    }
+    .modal-state-button:hover { text-decoration: underline; }
+
+    .tooltip {
+      position: absolute;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+      border: 1px solid #e4e8ef;
+    }
+
+    #trend-chart,
+    #trend-chart-fmd {
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 14px 16px 18px;
+      border: 1px solid var(--border);
+    }
+
+    .trend-caption {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 960px) {
+      body { padding: 20px 14px 40px; }
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .state-card { position: static; }
+      .map-shell { min-height: 420px; }
+    }
+    /* ====== 상단 언론 스타일 헤더 ====== */
+
+.site-header {
+  margin: 0 0 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  width: 100%;
+}
+
+/* 위쪽 회색 뉴스 스트립 */
+.header-top {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 12px;
+  color: #777;
+}
+
+.header-top-inner,
+.header-main-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+/* "ES NOTICIA" 라벨 */
+.header-top-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 10px;
+}
+
+/* 상단 링크들 */
+.header-top-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+}
+
+.header-top-links li {
+  white-space: nowrap;
+  padding-left: 10px;
+  border-left: 1px solid #d0d0d0;
+}
+
+.header-top-links a {
+  text-decoration: none;
+  color: #777;
+}
+
+/* 메인 헤더 (로고 + 카테고리 + 버튼) */
+.header-main {
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.header-main-inner {
+  justify-content: space-between;
+  padding: 1px 18px;
+}
+
+/* 왼쪽: 로고 + 내비게이션 */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.header-logo-link img {
+  display: block;
+  height: 56px;   /* Logo.svg 크기 여기서 조절 */
+  width: auto;
+}
+
+/* 가운데 내비게이션 */
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 16px;
+  font-family: "Times New Roman", serif;
+}
+
+.main-nav a,
+.main-nav button {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: "Times New Roman", serif;
+  cursor: pointer;
+  text-decoration: none;
+  color: #111;
+  white-space: nowrap;
+}
+
+.main-nav a:hover,
+.main-nav button:hover {
+  color: #0f4c81;
+}
+
+/* "Menú" 버튼 + 햄버거 아이콘 */
+.nav-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+}
+
+.nav-menu-icon {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.nav-menu-icon span {
+  display: block;
+  width: 14px;
+  height: 2px;
+  background: #111;
+}
+
+/* 오른쪽: 구독 버튼 + 로그인 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.header-subscribe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: none;
+  background: #008c6f;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.header-subscribe span {
+  font-weight: 900;
+  margin: 0 2px;
+}
+
+.header-subscribe:hover {
+  background: #00715c;
+}
+
+.header-login {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  color: #111;
+  white-space: nowrap;
+}
+
+.header-login:hover {
+  color: #0f4c81;
+}
+
+/* body의 모바일 padding에 맞춰 헤더 margin 보정 */
+@media (max-width: 960px) {
+  .site-header {
+    margin: -20px -14px 14px;
+  }
+
+  .header-top-inner,
+  .header-main-inner {
+    padding: 6px 12px;
+  }
+
+  .header-left {
+    gap: 14px;
+  }
+
+  .main-nav {
+    gap: 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 680px) {
+  .main-nav a:nth-child(n+3) {
+    display: none; /* 화면 좁을 때는 메뉴 일부만 보이게 */
+  }
+}
+  </style>
+</head>
+
+<body>
+    <body>
+  <!-- 상단 언론 사이트 스타일 헤더 -->
+  <header class="site-header">
+    <!-- 위쪽 회색 뉴스 스트립 -->
+    <div class="header-top">
+      <div class="header-top-inner">
+        <span class="header-top-label">ES NOTICIA</span>
+        <ul class="header-top-links">
+          <li><a href="#">Últimas noticias</a></li>
+          <li><a href="#">Sorteo del Mundial 2026</a></li>
+          <li><a href="#">Niño Juan</a></li>
+          <li><a href="#">Alfonso Ussía</a></li>
+          <li><a href="#">WhatsApp Mazón</a></li>
+          <li><a href="#">Terremoto Fuengirola</a></li>
+          <li><a href="#">Bolsa EEUU</a></li>
+          <li><a href="#">Lotería Navidad 2025</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 메인 헤더 (Logo.svg + 카테고리 + 버튼들) -->
+    <div class="header-main">
+      <div class="header-main-inner">
+        <div class="header-left">
+          <!-- Logo.svg 파일 사용 -->
+          <a href="#" class="header-logo-link" aria-label="Inicio">
+            <img src="Logo.svg" alt="Logo" />
+          </a>
+
+          <nav class="main-nav" aria-label="Secciones principales">
+            <a href="#">España</a>
+            <a href="#">Opinión</a>
+            <a href="#">Actualidad Económica</a>
+            <a href="#">Internacional</a>
+            <a href="#">Sociedad</a>
+            <a href="#">Reportaje</a>
+            <button class="nav-menu" type="button">
+              <span>Menú</span>
+              <span class="nav-menu-icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="header-right">
+          <button class="header-subscribe" type="button">
+            SUSCRÍBETE <span>12€</span>/AÑO
+          </button>
+          <button class="header-login" type="button">
+            Inicia sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-shell">
+  <div class="kicker-row">
+    <span class="kicker-primary">Sociedad</span>
+    <span class="kicker-secondary">| Cibercultura</span>
+  </div>
+  <h1>Pérdida de retroalimentación en una sociedad de alquileres</h1>
+  <p>La genealogía de la indefensión, nacida en los laboratorios de los años sesenta, llega hasta el mercado de alquiler de las grandes ciudades del siglo XXI</p>
+  <div class="save-share">
+    <button aria-label="Save">Save</button>
+    <button aria-label="Share">Share</button>
+  </div>
+
+  <section class="chart-block" aria-labelledby="rent-salary-title">
+    <div class="chart-header">
+      <h2 class="chart-title" id="rent-salary-title">Alquiler medio de un apartamento de un dormitorio frente al salario neto medio (2025)</h2>
+      <p class="chart-subtitle">Principales ciudades del mundo clasificadas por precio del alquiler; la longitud de las barras se ajusta dentro de cada métrica.</p>
+    </div>
+    <div class="chart-columns" id="rent-salary-chart">
+      <div class="labels-column">
+        <h3 aria-hidden="true">Cities</h3>
+        <div class="label-list" id="label-column"></div>
+      </div>
+      <div class="bar-column rent">
+        <h3>Alquier (EUR)</h3>
+        <div class="bar-list" id="rent-column"></div>
+      </div>
+      <div class="bar-column salary">
+        <h3>Salario (EUR)</h3>
+        <div class="bar-list" id="salary-column"></div>
+      </div>
+    </div>
+    <div class="chart-source">Fuente: Deutsche Bank Research Institute (numbeo.com &amp; Deutsche Bank) • Alquiler de un apartamento de un dormitorio en el centro de la ciudad.</div>
+  </section>
+
+  <div class="updated-meta">Actualizado Jueves, 4 diciembre 2025 - 00:57</div>
+
+  <script>
+    (function() {
+      const data = [
+        { city: "New York", rent: 3792, salary: 4693 },
+        { city: "London", rent: 2732, salary: 3637 },
+        { city: "Zurich", rent: 2489, salary: 7127 },
+        { city: "Los Angeles", rent: 2391, salary: 4062 },
+        { city: "Dubai", rent: 2197, salary: 3719 },
+        { city: "Dublin", rent: 2176, salary: 3507 },
+        { city: "Amsterdam", rent: 2158, salary: 4352 },
+        { city: "Geneva", rent: 2132, salary: 7307 },
+        { city: "Sydney", rent: 1980, salary: 3944 },
+        { city: "Luxembourg", rent: 1909, salary: 5634 },
+        { city: "Copenhagen", rent: 1850, salary: 4270 },
+        { city: "Toronto", rent: 1654, salary: 2936 },
+        { city: "Munich", rent: 1610, salary: 3574 },
+        { city: "Oslo", rent: 1546, salary: 3685 },
+        { city: "Edinburgh", rent: 1495, salary: 3419 },
+        { city: "Paris", rent: 1492, salary: 3322 },
+        { city: "Madrid", rent: 1491, salary: 2007 },
+        { city: "Lisbon", rent: 1481, salary: 1278 },
+        { city: "Milan", rent: 1466, salary: 2052 },
+        { city: "Stockholm", rent: 1455, salary: 3162 },
+        { city: "Barcelona", rent: 1416, salary: 1905 },
+        { city: "Frankfurt", rent: 1403, salary: 4129 },
+        { city: "Melbourne", rent: 1398, salary: 3782 },
+        { city: "Berlin", rent: 1300, salary: 3263 },
+        { city: "Birmingham", rent: 1224, salary: 2795 },
+        { city: "Rome", rent: 1214, salary: 1872 },
+        { city: "Brussels", rent: 1192, salary: 2994 },
+        { city: "Moscow", rent: 1182, salary: 1510 },
+        { city: "Vienna", rent: 1152, salary: 3105 },
+        { city: "Helsinki", rent: 1102, salary: 3123 },
+        { city: "Warsaw", rent: 1044, salary: 1859 },
+        { city: "Prague", rent: 1042, salary: 1934 },
+        { city: "Tokyo", rent: 1023, salary: 2372 },
+        { city: "Mexico City", rent: 917, salary: 780 },
+        { city: "Seoul", rent: 887, salary: 3000 },
+        { city: "Shanghai", rent: 870, salary: 1375 },
+        { city: "Istanbul", rent: 868, salary: 855 },
+        { city: "Cape Town", rent: 694, salary: 1399 },
+        { city: "Budapest", rent: 665, salary: 1289 },
+        { city: "Mumbai", rent: 642, salary: 766 },
+        { city: "Sao Paulo", rent: 611, salary: 602 },
+        { city: "Athens", rent: 595, salary: 1044 },
+        { city: "Buenos Aires", rent: 593, salary: 671 },
+        { city: "Bogota", rent: 413, salary: 343 },
+        { city: "Bangalore", rent: 279, salary: 1154 },
+        { city: "Cairo", rent: 189, salary: 151 }
+      ];
+
+      const labelColumn = document.getElementById("label-column");
+      const rentColumn = document.getElementById("rent-column");
+      const salaryColumn = document.getElementById("salary-column");
+      if (!rentColumn || !salaryColumn || !labelColumn) return;
+
+      const maxRent = Math.max(...data.map(d => d.rent));
+      const maxSalary = Math.max(...data.map(d => d.salary));
+
+      const makeRow = (item, type, maxVal) => {
+        const row = document.createElement("div");
+        row.className = "bar-row";
+
+        const bar = document.createElement("div");
+        bar.className = "bar";
+
+        const fill = document.createElement("div");
+        fill.className = `bar-fill ${type}`;
+        const width = Math.max((item[type] / maxVal) * 100, 4);
+        fill.style.width = `${width}%`;
+        fill.textContent = item[type].toLocaleString("en-US");
+
+        bar.appendChild(fill);
+        row.appendChild(bar);
+        return row;
+      };
+
+      data.forEach(item => {
+        const label = document.createElement("div");
+        label.className = "label-item";
+        label.textContent = item.city;
+        labelColumn.appendChild(label);
+
+        rentColumn.appendChild(makeRow(item, "rent", maxRent));
+        salaryColumn.appendChild(makeRow(item, "salary", maxSalary));
+      });
+    })();
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const chart = document.getElementById("paycheck-chart");
+      if (!chart) return;
+
+      const data = [
+        { country: "UK", value: 49 },
+        { country: "France", value: 43 },
+        { country: "Netherlands", value: 42 },
+        { country: "Spain", value: 57 },
+        { country: "Germany", value: 51 },
+        { country: "Switzerland", value: 59 }
+      ];
+
+      const maxVal = Math.max(...data.map(d => d.value), 60);
+
+      data.forEach(d => {
+        const row = document.createElement("div");
+        row.className = "paycheck-bar-row";
+
+        const label = document.createElement("div");
+        label.textContent = d.country;
+        row.appendChild(label);
+
+        const bar = document.createElement("div");
+        bar.className = "paycheck-bar";
+
+        const fill = document.createElement("div");
+        const extra = d.country === "Spain" ? " spain" : "";
+        fill.className = "paycheck-fill" + extra;
+        fill.style.width = `${(d.value / maxVal) * 100}%`;
+        bar.appendChild(fill);
+        row.appendChild(bar);
+
+        const val = document.createElement("div");
+        val.className = "paycheck-value";
+        val.textContent = d.value + "%";
+        row.appendChild(val);
+
+        chart.appendChild(row);
+      });
+    });
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const years = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
+      // Approximate values to mirror the provided chart (2012 = 100)
+      const wages =   [100, 100, 100, 101, 103, 105, 108, 112, 118, 124, 128];
+      const property = [100, 103, 105, 111, 122, 133, 143, 146, 148, 160, 177];
+      const rent =    [100, 105, 113, 120, 130, 144, 154, 164, 168, 180, 193];
+
+      const series = [
+        { name: "Wages", color: "#6a1b7a", values: wages },
+        { name: "Residential property Price", color: "#17b5bd", values: property },
+        { name: "Rent", color: "#e3a02f", values: rent }
+      ];
+
+      const container = d3.select("#wage-rent-chart");
+      if (!container.node()) return;
+
+      const margin = { top: 22, right: 28, bottom: 38, left: 50 };
+      const width = 960;
+      const height = 380;
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+
+      const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("height", "auto");
+
+      const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scalePoint()
+        .domain(years)
+        .range([0, innerWidth])
+        .padding(0.5);
+
+      const allValues = series.flatMap(s => s.values);
+      const y = d3.scaleLinear()
+        .domain([100, d3.max(allValues) * 1.05])
+        .range([innerHeight, 0]);
+
+      const yTicks = y.ticks(6).filter(t => t >= 100);
+
+      g.append("g")
+        .attr("stroke", "#e5e8ec")
+        .attr("stroke-opacity", 1)
+        .call(grid => grid.selectAll("line")
+          .data(yTicks)
+          .join("line")
+          .attr("x1", 0)
+          .attr("x2", innerWidth)
+          .attr("y1", d => y(d))
+          .attr("y2", d => y(d)));
+
+      g.append("g")
+        .attr("transform", `translate(0,${innerHeight})`)
+        .call(d3.axisBottom(x).tickFormat(d3.format("d")))
+        .call(axis => axis.selectAll("text").attr("font-size", 11));
+
+      g.append("g")
+        .call(d3.axisLeft(y).tickValues(yTicks).tickFormat(d => d.toFixed(0)))
+        .call(axis => axis.selectAll("text").attr("font-size", 11));
+
+      const lineGen = d3.line()
+        .x((d, i) => x(years[i]))
+        .y(d => y(d))
+        .curve(d3.curveMonotoneX);
+
+      series.forEach(s => {
+        g.append("path")
+          .datum(s.values)
+          .attr("fill", "none")
+          .attr("stroke", s.color)
+          .attr("stroke-width", 3)
+          .attr("d", lineGen);
+      });
+    });
+  </script>
+
+  <div class="story-block">
+    <p>Para un joven asalariado que vive en una gran ciudad de un país desarrollado, el día de cobro ya no constituye un momento de celebración. El saldo de la cuenta el mismo día en que entra la nómina y el de dos días después muestran cifras que apenas guardan relación. Cuando casi la mitad del salario mensual se entrega en concepto de alquiler, afrontar los suministros, el transporte y la alimentación ya resulta una operación ajustada.</p>
+
+    <p>Los jóvenes empleados que sostienen un café en el trayecto al trabajo dentro del metro vuelven a comprobar las cifras que aparecen en la cuenta y calculan mentalmente a partir de qué día de ese mes deberán aplazar el pago de la tarjeta y en qué medida puede incrementarse el alquiler en la próxima renovación del contrato. El ahorro queda relegado a una posibilidad remota y el proyecto de acceder a una vivienda en propiedad se asemeja más a un eslogan sin anclaje en la realidad.</p>
+
+    <p>En una estructura concebida para que la renta de alquiler absorba entre el 40 y el 50 por ciento de los ingresos netos, los inquilinos consiguen mantenerse con vida económica, aunque permanecen fijados en una posición que apenas les permite avanzar. La mayor parte de lo que queda se destina a la compra de alimentos, a las facturas de luz y agua y a los desplazamientos, mientras los últimos porcentajes se dispersan en pequeñas formas de ocio como los servicios de streaming, algún viaje breve o una comida fuera de casa. Cuando esta forma de vida se repite durante varios años, e incluso cerca de una década, las personas terminan asumiendo sin especial extrañeza que este patrón constituye el parámetro por defecto de su propia existencia.</p>
+
+    <p><strong>Una historia que se inicia en el laboratorio</strong></p>
+
+    <p>Para comprender esta estructura, se puede recurrir antes que nada al concepto de indefensión aprendida. Cuando la persona se encuentra de forma reiterada ante situaciones que no puede controlar, tiende a renunciar incluso al intento y adopta una actitud pasiva. Manuel, profesor de Neurociencia en la Universidad de Sevilla, lo explica así: “La indefensión aprendida, en realidad, es una especie de diseño. Lo concibió el psicólogo estadounidense Seligman. Y procede de los años sesenta; en lo esencial, se trata de un diseño que se utiliza cuando se pretende construir un modelo de depresión en animales, lo que se denomina una situación de inescapabilidad”.</p>
+
+    <p>En el experimento al que alude, el animal al principio pulsa la palanca, salta y prueba toda clase de conductas, pero a partir de un determinado momento permanece quieto y soporta la descarga eléctrica sin moverse. Añade: “Se toma un animal y se le introduce en una situación de la que no puede escapar. Esto guarda relación con cualquier tarea de aprendizaje. Cuando el animal realiza una conducta y obtiene un beneficio, o, dicho de forma más sencilla, cuando logra evitar un castigo, se produce aprendizaje. En este tipo de modelos de depresión se diseña la situación de modo que nada cambie, con independencia de lo que haga el animal”.</p>
+
+    <p>Sin embargo, investigaciones recientes invierten esta narración de manera sutil. En realidad, el estado por defecto se aproxima más a la pasividad, y lo que la persona adquiere mediante el aprendizaje se parece a una sensación de control. En una región situada en una zona profunda del encéfalo, el denominado núcleo del rafe dorsal (dorsal raphe nucleus, DRN), una liberación intensa de serotonina conduce al animal hacia una actitud aún más pasiva. En cambio, cuando la corteza prefrontal medial (medial prefrontal cortex, mPFC) ejerce una acción inhibidora sobre esta región, el animal por fin inicia conductas orientadas a modificar su entorno.</p>
+
+    <p>Dicho en forma sencilla, el cerebro tiende a partir de la idea de que el mundo en general constituye un espacio imposible de controlar. A partir de ahí, y con pasos muy pequeños, se acumulan experiencias en las que el sujeto comprueba que en determinadas situaciones sí puede modificar algo, y el repertorio de acciones se amplía. Cuando esa clase de experiencias desaparece, el cerebro regresa al estado base de pasividad.</p>
+
+    <p>Si se coloca junto a esta escena la vida cotidiana de un inquilino que cada mes entrega la mitad del salario al propietario y, después, calcula qué parte de los pagos con tarjeta, de los recibos y de la comida puede recortar, la metáfora adopta de pronto un rostro concreto. Durante los primeros años, muchas personas buscan una habitación más barata, tratan de reducir gastos y se esfuerzan por aumentar los ingresos. Exploran barrios donde el alquiler resulta algo menos elevado y se plantean mudarse hacia la periferia de la ciudad, aunque en el nuevo lugar la carga del transporte y del tiempo de desplazamiento crece y los precios se mantienen similares o incluso superiores. Tras la acumulación de intentos y frustraciones, lo único que permanece es una hoja de cálculo mental cada vez más familiar, y se consolida la costumbre de aplazar decisiones importantes como un cambio de vivienda o de empleo.</p>
+
+    <p>Cuanto más se prolonga el estrés, con mayor intensidad se modifican también los circuitos cerebrales. Manuel afirma: “Cuando esa carga se acumula, la persona se despierta por la mañana en un estado de ansiedad; además, aparecen interferencias en la memoria e incluso se observa un impacto en el funcionamiento psicomotor. A partir de ahí, el sistema dopaminérgico y otros sistemas aminérgicos funcionan de manera mucho menos adecuada y surgen dificultades tanto en la concentración como en el aprendizaje”.</p>
+
+    <p><strong>Un sistema con la retroalimentación interrumpida</strong><br />
+    En este punto entra el lenguaje de la cibernética. Esta disciplina, que Norbert Wiener formuló de manera explícita, se ocupa del control y de la comunicación en animales y máquinas. Todo sistema que tiene un objetivo se mueve mediante la retroalimentación. Si fijamos un estado deseado —por ejemplo, conservar cierto nivel de ahorro incluso después de pagar el alquiler—, observamos la cuantía del salario que entra cada mes, los gastos fijos que salen y la cantidad de dinero que queda disponible, y ajustamos nuestra conducta a partir de esos datos.</p>
+
+    <p>En el plano teórico, el esquema resulta sencillo. Cuando la distancia entre la meta y la realidad alcanza una magnitud considerable, la conducta se modifica; cuando esa distancia se reduce, la conducta se mantiene. Este proceso de ajuste repetido constituye, en sí mismo, la base de la sensación de que controlo mi vida hasta cierto punto, es decir, la cara emocional de la condición de sujeto.</p>
+
+    <p>El problema aparece en el momento en que se rompe este circuito de retroalimentación. Si se repite una situación en la que el resultado no cambia pese a las modificaciones de la conducta, el sistema en algún momento inicia una reducción de la salida. El cerebro se inclina de manera natural hacia la interrupción de aquellas acciones que solo consumen energía. La expresión “indefensión aprendida” se asemeja a un rótulo que se aplica a ese estado.</p>
+
+    <p>Si se traslada este esquema a la cuestión de la vivienda, la imagen no presenta diferencias sustanciales. Se recortan gastos, se trabaja durante más horas, se busca un barrio más barato y se intenta cambiar de vivienda, pero el saldo de la cuenta a final de mes apenas se altera cuando se suman el tiempo y el coste del desplazamiento y el nivel general de precios. Después de varios intentos de mudanza y de cambio de empleo, lo que permanece es una forma de resignación ante la idea de que, en lo esencial, nada cambia de manera apreciable y un hábito consolidado de posponer cualquier transformación ulterior.</p>
+
+    <p><strong>Más que una vivienda, un activo</strong><br />
+    La hipótesis central de esta investigación aparece con claridad. El mercado de la vivienda en la actualidad no constituye solo el espacio en el que se encuentran oferta y demanda, sino una estructura rígida en la que coinciden y se ajustan los intereses de los sectores de población de mayor edad que poseen activos, del capital financiero y de los grupos políticos establecidos. Dentro de esta configuración, el vínculo entre el esfuerzo individual y la estabilidad residencial casi se ha roto, y de ahí surge la tesis de que el mercado de la vivienda en su conjunto funciona como una suerte de “sistema de indefensión”.</p>
+
+    <p>La perspectiva que concibe la vivienda no solo como un lugar donde residir, sino como un bien que se negocia en el mercado, introduce una capa adicional. En muchos países, la casa ha dejado de entenderse como un espacio para vivir y se trata ante todo como un activo de inversión. José, economista, lo formula del siguiente modo: “Creo que esto tiene que ver con las políticas neoliberales relacionadas con la vivienda o con la liberalización. La vivienda dejó de ser un activo destinado a proporcionar un lugar para vivir y se convirtió en un bien que se negocia en el mercado. En ese sentido, pasó a ser un producto del libre mercado. Y en espacios de ese tipo, en todos los países los precios van al alza”.</p>
+
+    <div class="line-chart-block">
+      <h3 class="line-chart-title">Índice de salarios, alquileres y precios de la vivienda</h3>
+      <p class="line-chart-subtitle">2012 = 100. Salarios frente al precio de la vivienda y frente al alquiler.</p>
+      <div class="line-chart-legend">
+        <span><span class="line-legend-chip" style="background:#6a1b7a"></span>Salarios</span>
+        <span><span class="line-legend-chip" style="background:#17b5bd"></span>Precio de la vivienda</span>
+        <span><span class="line-legend-chip" style="background:#e3a02f"></span>Alquier</span>
+      </div>
+      <div id="wage-rent-chart"></div>
+      <div class="chart-source">Fuente: CSO, HPA05, EHQ08, The RTB Rent Index Q4 2022.</div>
+    </div>
+
+    <p>Cuando la vivienda se somete a este tipo de financiarización, la distancia entre la capacidad de negociación de los arrendadores y la de los inquilinos se amplía todavía más. José identifica como punto de inflexión un conjunto de políticas de liberalización del suelo en un periodo concreto. Recuerda así ese momento: “Una política marcó un antes y un después. A comienzos de los años 2000 se liberalizó todo el suelo para destinarlo a la construcción de vivienda. El lema consistía en que, si se incrementaba la oferta, los precios bajarían. Pero eso no funciona así. Porque se trata de un bien de primera necesidad. Más tarde se utilizó ese suelo para la especulación y, aunque se incrementó la oferta, los precios no bajaron”.</p>
+
+    <p>En este punto, la política, la administración y el sector financiero aparecen estrechamente entrelazados. Las finanzas públicas dependen en gran medida de figuras impositivas ligadas al sector inmobiliario, como los impuestos sobre transmisiones patrimoniales, sobre la propiedad o sobre las plusvalías. Bancos y fondos consideran la vivienda una fuente de rentabilidad relativamente segura. Y, en medio de todo ello, una parte significativa de quienes participan en el diseño de las políticas posee más de una vivienda; para este grupo, un escenario de descenso de los precios de la vivienda se sitúa en dirección contraria no solo a la evolución de su propio patrimonio, sino también a los intereses materiales de buena parte de su base electoral.</p>
+
+    <p>Aquí se superponen el envejecimiento demográfico y la llamada democracia plateada. En una sociedad donde la generación que ya posee vivienda representa una proporción muy elevada tanto dentro de la población como en la participación electoral, el aumento del precio de los activos se vincula de manera directa con la estabilidad material de las personas mayores. En sentido inverso, la generación joven que no ha logrado acceder a la propiedad queda desplazada, tanto en la dimensión cuantitativa como en su capacidad de influencia política.</p>
+
+    <p>El resultado que produce esta estructura es, en el fondo, menos complejo de lo que podría parecer. En las grandes ciudades de los países desarrollados, destinar entre el 40 y el 50 % de los ingresos netos al pago del alquiler ha dejado de ser un fenómeno infrecuente. Una parte considerable de los hogares de renta baja se sitúa en una condición de sobrecarga de gasto en vivienda, al dedicar más de un tercio de sus ingresos a este concepto, y este estado se extiende sin grandes distinciones entre generaciones y territorios.</p>
+
+    <p>Si se adopta la mirada del individuo, el bucle de retroalimentación aparece torcido de este modo. La meta combina una residencia estable, un cierto nivel de ahorro y la posibilidad, quizá lejana, de acceder algún día a una vivienda en propiedad. Sobre el escenario se suceden conductas como trabajar más horas, obtener certificados y títulos, recortar gastos y buscar barrios más económicos en la periferia urbana. Sin embargo, el resultado queda finalmente determinado por la rentabilidad del capital global, por el tipo de interés y por la intensidad de las políticas de desregulación. Cuanto más tiempo persiste un entorno en el que el esfuerzo personal y los resultados no guardan un vínculo directo, con mayor fuerza se instala en la mente la frase “nunca llegaré a tener una casa propia”, hasta que termina por funcionar como una evidencia íntima.</p>
+
+    <p>Él añade: “El problema es que, con tus ingresos, no puedes ahorrar y acabas atrapado en ese alquiler. Y probablemente, a partir de ahí, la gente empezará a pensar algo así: nunca llegaré a tener una vivienda propia; incluso formar una familia será difícil”. En el momento en que la vivienda se convierte en meta explícita, la distancia entre el salario actual, el volumen de ahorro y la gráfica de los precios inmobiliarios adquiere una escala desmesurada. De este modo, el circuito de retroalimentación de la persona queda cada vez más embotado.</p>
+
+    <p><strong>El resultado de seguir 51 territorios de Estados Unidos</strong><br />
+    Las palabras y las metáforas no bastan para explicar por completo este vínculo. Con el fin de poner a prueba esta hipótesis, elaboramos una serie de datos de largo recorrido en la que se siguió de manera continuada a los 50 estados de Estados Unidos y al Distrito de Columbia, en total 51 territorios, desde 2014 hasta 2019 y, tras la pandemia, entre 2021 y 2023. Se analizaron datos de panel, en los que las mismas regiones se observan de forma repetida a lo largo de varios años.</p>
+  </div>
+
+  <!-- GRPIP_mean -->
+  <section class="metric-block" id="grpip-block">
+    <div class="layout">
+      <div class="map-block">
+        <div class="map-shell">
+          <button id="search-toggle-grpip" class="map-search-btn" title="주 검색 열기/닫기">🔍</button>
+          <div id="search-panel-grpip" class="map-search-panel">
+            <input id="search-input-grpip" type="text" placeholder="Introduzca el nombre del estado o selecciónelo de la lista inferior." />
+            <div id="search-list-grpip" class="search-list"></div>
+          </div>
+
+          <div class="year-select" id="year-select-grpip">
+            <button class="year-select-btn" id="year-select-btn-grpip">2023 ▼</button>
+            <div class="year-dropdown" id="year-dropdown-grpip"></div>
+          </div>
+
+          <div class="map-zoom">
+            <button class="zoom-btn" id="zoom-in-grpip" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" id="zoom-out-grpip" aria-label="Zoom Out">−</button>
+          </div>
+
+          <div id="map-grpip" class="map-target"></div>
+        </div>
+
+        <div id="legend-container-grpip" class="legend-steps">
+          <div class="legend-title" id="legend-title-grpip">Alquiler bruto como porcentaje de los ingresos del hogar en los últimos 12 meses.</div>
+          <div class="legend-steps-row" id="legend-steps-row-grpip"></div>
+          <div class="legend-caption">Datos del ACS public use microdata sample (PUMS). Washington, D.C. :U.S. Census Bureau.</div>
+        </div>
+      </div>
+
+      <aside class="state-card">
+        <div class="state-card-title" id="state-title-grpip">United States</div>
+        <div class="state-card-subtitle" id="state-subtitle-grpip">Cuando seleccione un estado en el mapa de la izquierda o lo busque, el valor aparecerá en este recuadro.</div>
+
+        <div class="state-card-grid">
+          <div class="state-card-box">
+            <div class="state-card-label">Alquiler bruto como porcentaje de los ingresos del hogar en los últimos 12 meses.</div>
+            <div class="state-card-value" id="state-value-grpip">-</div>
+          </div>
+          <div class="state-card-box">
+            <div class="state-card-label">Rank</div>
+            <div class="state-card-rank" id="state-rank-grpip">-</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="ranking-section">
+      <div class="ranking-grid">
+        <div>
+          <div class="ranking-column-title">Top States</div>
+          <ul class="ranking-list" id="top-states-list-grpip"></ul>
+        </div>
+        <div>
+          <div class="ranking-column-title">Bottom States</div>
+          <ul class="ranking-list" id="bottom-states-list-grpip"></ul>
+        </div>
+      </div>
+      <button id="view-all-btn">Ver todos los estados</button>
+    </section>
+
+    <div id="all-states-modal">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div class="modal-title">Frequent Mental Distress by State (All States)</div>
+          <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <table>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th class="td-right">Rank</th>
+                <th class="td-right">Value</th>
+              </tr>
+            </thead>
+            <tbody id="all-states-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <h2>GRPIP Trends (United States)</h2>
+      <p>Muestra la evolución media de Estados Unidos calculada a partir del promedio del GRPIP de todos los estados en cada año.</p>
+      <div id="trend-chart"></div>
+      <div class="trend-caption">Cada punto de la línea representa la media simple del GRPIP de todos los estados incluidos en ese año.</div>
+    </section>
+  </section>
+
+  <div class="story-block">
+    <p>En primer lugar se examinó la carga de la vivienda en cada territorio. A partir de los datos de la Oficina del Censo de Estados Unidos se calculó qué proporción de la renta de los hogares se destina al pago del alquiler y qué porcentaje de viviendas supera un determinado umbral en esa relación. Cuanto mayor es la presencia de hogares que entregan claramente más de un tercio de sus ingresos mensuales al alquiler, con mayor intensidad se asemeja la vivienda, para la población de esa región, a un coste fijo que estrecha las condiciones de supervivencia. El equipo de investigación tomó esta proporción como el rostro numérico de la presión de los costes de la vivienda.</p>
+  </div>
+
+  <!-- Prevalence_FrequentMentalDistress -->
+  <section class="metric-block" id="fmd-block">
+    <div class="layout">
+      <div class="map-block">
+        <div class="map-shell">
+          <button id="search-toggle-fmd" class="map-search-btn" title="주 검색 열기/닫기">🔍</button>
+          <div id="search-panel-fmd" class="map-search-panel">
+            <input id="search-input-fmd" type="text" placeholder="Introduzca el nombre del estado o selecciónelo de la lista inferior." />
+            <div id="search-list-fmd" class="search-list"></div>
+          </div>
+
+          <div class="year-select" id="year-select-fmd">
+            <button class="year-select-btn" id="year-select-btn-fmd">2023 ▼</button>
+            <div class="year-dropdown" id="year-dropdown-fmd"></div>
+          </div>
+
+          <div class="map-zoom">
+            <button class="zoom-btn" id="zoom-in-fmd" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" id="zoom-out-fmd" aria-label="Zoom Out">−</button>
+          </div>
+
+          <div id="map-fmd" class="map-target"></div>
+        </div>
+
+        <div id="legend-container-fmd" class="legend-steps">
+          <div class="legend-title" id="legend-title-fmd">Prevalence_FrequentMentalDistress</div>
+          <div class="legend-steps-row" id="legend-steps-row-fmd"></div>
+          <div class="legend-caption">Datos del U.S. Department of Health and Human Services, Centers for Disease Control and Prevention, Behavioral Risk Factor Surveillance System</div>
+        </div>
+      </div>
+
+      <aside class="state-card">
+        <div class="state-card-title" id="state-title-fmd">United States</div>
+        <div class="state-card-subtitle" id="state-subtitle-fmd">Cuando seleccione un estado en el mapa de la izquierda o lo busque, el valor aparecerá en este recuadro.</div>
+
+        <div class="state-card-grid">
+          <div class="state-card-box">
+            <div class="state-card-label">14+ días con mala salud mental</div>
+            <div class="state-card-value" id="state-value-fmd">-</div>
+          </div>
+          <div class="state-card-box">
+            <div class="state-card-label">Rank</div>
+            <div class="state-card-rank" id="state-rank-fmd">-</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="ranking-section">
+      <div class="ranking-grid">
+        <div>
+          <div class="ranking-column-title">Top States</div>
+          <ul class="ranking-list" id="top-states-list-fmd"></ul>
+        </div>
+        <div>
+          <div class="ranking-column-title">Bottom States</div>
+          <ul class="ranking-list" id="bottom-states-list-fmd"></ul>
+        </div>
+      </div>
+      <button id="view-all-btn-fmd">Ver todos los estados</button>
+    </section>
+
+    <div id="all-states-modal-fmd">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div class="modal-title">Prevalence_FrequentMentalDistress by State (All States)</div>
+          <button class="modal-close" id="modal-close-btn-fmd" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <table>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th class="td-right">Rank</th>
+                <th class="td-right">Value</th>
+              </tr>
+            </thead>
+            <tbody id="all-states-table-body-fmd"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <h2>FrequentMentalDistress Trends (United States)</h2>
+      <p>Muestra la evolución media de Estados Unidos calculada a partir del promedio del malestar mental frecuente de todos los estados en cada año.</p>
+      <div id="trend-chart-fmd"></div>
+      <div class="trend-caption">Cada punto de la línea representa la media simple del malestar mental frecuente de todos los estados incluidos en ese año.</div>
+    </section>
+  </section>
+
+  <div class="story-block">
+    <p>A estos datos se añadió un conjunto de indicadores de salud mental. En la encuesta de salud que los Centros para el Control y la Prevención de Enfermedades de Estados Unidos realizan cada año aparece una pregunta de este tipo: “Durante los últimos 30 días, ¿cuántos días se sintió mal desde el punto de vista mental?”. Si se selecciona el porcentaje de personas que responden catorce días o más, se obtiene una estimación aproximada de la extensión del malestar psíquico crónico dentro de cada región.</p>
+  </div>
+
+  <!-- Promedio_POORHLTH -->
+  <section class="metric-block" id="poorhlth-block">
+    <div class="layout">
+      <div class="map-block">
+        <div class="map-shell">
+          <button id="search-toggle-poorhlth" class="map-search-btn" title="주 검색 열기/닫기">🔍</button>
+          <div id="search-panel-poorhlth" class="map-search-panel">
+            <input id="search-input-poorhlth" type="text" placeholder="Introduzca el nombre del estado o selecciónelo de la lista inferior." />
+            <div id="search-list-poorhlth" class="search-list"></div>
+          </div>
+
+          <div class="year-select" id="year-select-poorhlth">
+            <button class="year-select-btn" id="year-select-btn-poorhlth">2023 ▼</button>
+            <div class="year-dropdown" id="year-dropdown-poorhlth"></div>
+          </div>
+
+          <div class="map-zoom">
+            <button class="zoom-btn" id="zoom-in-poorhlth" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" id="zoom-out-poorhlth" aria-label="Zoom Out">−</button>
+          </div>
+
+          <div id="map-poorhlth" class="map-target"></div>
+        </div>
+
+        <div id="legend-container-poorhlth" class="legend-steps">
+          <div class="legend-title" id="legend-title-poorhlth">Promedio_POORHLTH</div>
+          <div class="legend-steps-row" id="legend-steps-row-poorhlth"></div>
+          <div class="legend-caption">Datos del U.S. Department of Health and Human Services, Centers for Disease Control and Prevention, Behavioral Risk Factor Surveillance System</div>
+        </div>
+      </div>
+
+      <aside class="state-card">
+        <div class="state-card-title" id="state-title-poorhlth">United States</div>
+        <div class="state-card-subtitle" id="state-subtitle-poorhlth">Cuando seleccione un estado en el mapa de la izquierda o lo busque, el valor aparecerá en este recuadro.</div>
+
+        <div class="state-card-grid">
+          <div class="state-card-box">
+            <div class="state-card-label">Durante los últimos 30 días, ¿durante cuántos días la mala salud física o mental le impidió realizar sus actividades habituales, como cuidarse, trabajar o dedicarse a actividades de ocio?</div>
+            <div class="state-card-value" id="state-value-poorhlth">-</div>
+          </div>
+          <div class="state-card-box">
+            <div class="state-card-label">Rank</div>
+            <div class="state-card-rank" id="state-rank-poorhlth">-</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="ranking-section">
+      <div class="ranking-grid">
+        <div>
+          <div class="ranking-column-title">Top States</div>
+          <ul class="ranking-list" id="top-states-list-poorhlth"></ul>
+        </div>
+        <div>
+          <div class="ranking-column-title">Bottom States</div>
+          <ul class="ranking-list" id="bottom-states-list-poorhlth"></ul>
+        </div>
+      </div>
+      <button id="view-all-btn-poorhlth">Ver todos los estados</button>
+    </section>
+
+    <div id="all-states-modal-poorhlth">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div class="modal-title">Promedio_POORHLTH by State (All States)</div>
+          <button class="modal-close" id="modal-close-btn-poorhlth" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <table>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th class="td-right">Rank</th>
+                <th class="td-right">Value</th>
+              </tr>
+            </thead>
+            <tbody id="all-states-table-body-poorhlth"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Promedio_POORHLTH Trends (United States)</h2>
+      <p>Muestra la evolución media de Estados Unidos calculada a partir del promedio del POORHLTH de todos los estados en cada año.</p>
+      <div id="trend-chart-poorhlth"></div>
+      <div class="trend-caption">Cada punto de la línea representa la media simple del POORHLTH de todos los estados incluidos en ese año.</div>
+    </section>
+  </section>
+
+  <div class="story-block">
+    <p>Por último, se incorporó una cuestión adicional: “Durante los últimos 30 días, ¿cuántos días no pudo realizar en absoluto sus actividades habituales debido a problemas de salud física o mental?”. La pregunta remite a actividades cotidianas como las tareas domésticas, el trabajo, los encuentros con amistades o el tiempo dedicado a aficiones. Cuando se calcula la media de las respuestas, el número de días al mes en que la población se ve completamente apartada de la vida ordinaria queda expresado en forma de cifra. Con este indicador se intenta seguir el punto en el que, más allá del simple malestar anímico, se produce una ruptura del funcionamiento de la vida diaria.</p>
+
+    <p>Lo decisivo reside en la manera de interpretar estas cifras. Algunos estados presentan desde el inicio una estructura de alquileres más elevada que otros; en ciertos años, dentro de un mismo estado, la carga del alquiler puede intensificarse de forma especialmente acusada. El equipo de investigación optó por distinguir estos dos planos. Para cada estado se calculó, en primer lugar, un valor medio a lo largo de los distintos años, con el objetivo de captar el perfil de fondo del territorio, es decir, el grado estructural de presión asociada a los costes de la vivienda. Al mismo tiempo se midió hasta qué punto cada año se situaba por encima o por debajo de ese promedio; dicho de otro modo, se estimó “en qué medida este año se percibe como más agobiante que lo habitual”. Los indicadores de estrés y de días sin actividad se descompusieron del mismo modo, de manera que se separó la huella de larga duración de cada región de las variaciones que aparecen de un año a otro.</p>
+
+    <p>Con este material ya depurado, el equipo de investigación examinó en primer lugar la relación entre la carga del alquiler y el estrés mental. Incluso cuando se toma en consideración la tendencia general ascendente a lo largo del tiempo, en los años en que, dentro de un mismo estado, la presión de los costes de vivienda fue de manera clara más elevada que de costumbre, la proporción de personas que respondieron que habían pasado catorce días o más en los últimos treinta con malestar psicológico aumentó de forma muy visible. Es decir, en los años en que el peso del alquiler se volvió de repente mucho más gravoso, se observó también una subida nítida del sufrimiento psíquico. En cambio, no aparecieron pruebas contundentes que permitiesen afirmar que los estados con alquileres altos de manera estructural presentasen siempre niveles de estrés mental claramente superiores a los de otras regiones. Las personas percibían con mucha mayor sensibilidad el cambio que supone que “este año la vivienda ahoga más” que el dato de fondo según el cual “en este barrio todo ha sido siempre caro”.</p>
+
+    <p>En un segundo paso, el equipo dirigió la atención a la vida cotidiana. La pregunta consistía en averiguar si el estrés y la presión de los costes de vivienda llegan en realidad a detener los días de las personas. El criterio se definió mediante el indicador mencionado de los días en que no se realiza ninguna actividad. Cuando se introdujeron en el modelo estadístico el estrés, la carga del alquiler y el curso del tiempo, el elemento que destacó con mayor fuerza fue el estrés. En los estados donde la proporción de quienes declaran un sufrimiento psíquico prolongado ya era elevada, la media de días del último mes en los que no se llevaron a cabo las actividades habituales resultó también mucho más alta. Dentro de un mismo estado, en los años en que el estrés superó el nivel acostumbrado, el número de días de retirada de la vida diaria también aumentó. El mensaje que transmiten las cifras aparece con nitidez: el estrés no se limita a rebajar el estado de ánimo, sino que inmoviliza el cuerpo y erosiona la capacidad de sostener el cuidado de uno mismo, el trabajo y el tiempo libre.</p>
+
+    <p>El efecto del alquiler dibuja una figura algo más compleja. En los estados donde la carga de la vivienda es estructuralmente alta, el promedio de días sin actividad resulta más prolongado, incluso cuando se aísla el componente de estrés mental. Esto indica que los costes elevados de la vivienda presionan de manera directa el funcionamiento de la vida cotidiana a través de un cauce que no pasa solo por el estrés. Sin embargo, en algunos casos se detectó una señal en dirección contraria: en los años en que, dentro de un mismo estado, la carga del alquiler superó el nivel habitual, el número de días de retirada disminuyó. Se han mencionado varias posibilidades, como la coincidencia de aumentos de ingresos con incrementos del alquiler o una presencia mayor, en las encuestas, de grupos más vinculados al mercado de trabajo, pero dejamos este punto como un enigma que requiere análisis adicional.</p>
+
+    <p>Aun así, la imagen general permanece clara. Una carga estructuralmente elevada de la vivienda, sumada a un estrés acumulado durante largos periodos, actúa de manera conjunta y borra poco a poco los días corrientes del calendario mensual. El cansancio de una vida en la que se trabaja para pagar el alquiler y, al mismo tiempo, se paga el alquiler para poder seguir con el trabajo se transforma, en las tablas estadísticas, en una cifra: el número de días de los últimos treinta en los que no se ha hecho nada.</p>
+
+    <p><strong>Entre el trabajador del siglo XIX y el inquilino del siglo XXI</strong><br />
+    De este modo se desgasta poco a poco la energía necesaria para trazar planes a largo plazo, asumir riesgos y tomar parte en la vida política. Al mismo tiempo, muchas personas recurren a la expresión “neofeudalismo” para describir esta relación. Según esta lectura, la situación recuerda a una época en la que los siervos entregaban al señor una parte considerable de su trabajo y de la cosecha y permanecían ligados a la tierra. Se añade la idea de que hoy se puede pagar una o dos suscripciones a Netflix y hacer algún viaje breve con aerolíneas de bajo coste, pero el sistema impide acumular lo suficiente como para cambiar de clase social.</p>
+
+    <p>Sin embargo, Alejandro, historiador, marca un límite a esta comparación. Afirma: “El feudalismo, en realidad, si intentamos decirlo de algún modo, es un sistema económico basado en la obediencia completa al señor; se puede describir como un orden en el que la vida de las personas queda por entero sometida a una forma de dependencia. En ese marco, la población carece de derechos jurídicos, no disfruta de libertad en sentido estricto, no tiene libertad de movimiento, ni de opinión, ni de expresión, o las tienen de manera muy limitada”.</p>
+
+    <p>En el mismo pasaje, Alejandro añade: “Por supuesto, todo eso, nos guste o no, hoy ya no existe. Comparar aquella época con la actualidad —y no lo digo solo como historiador— carece de un significado claro”, con lo que señala que la metáfora feudal no resulta adecuada desde el punto de vista histórico.</p>
+
+    <p>En su perspectiva, el espejo que refleja con mayor precisión la realidad actual se sitúa en el siglo XIX. Los trabajadores asalariados pasaban más de doce horas diarias en la fábrica y aun así se movían en torno al umbral de la pobreza; en muchos lugares la creación de sindicatos estaba prohibida. Se sucedían motines locales y ocupaciones de fábricas, aunque resultaban insuficientes para hacer tambalear el orden vigente.</p>
+
+    <p>Alejandro traza así el paralelismo entre el siglo XIX y el presente: “Hoy nos encontramos con una situación en la que muchas personas destinan el 50 por ciento o más de su salario a los gastos de vivienda. Hay quien dice que solo dedica en torno al 35 por ciento, pero eso sucede cuando se comparte habitación pasada la treintena; muchas personas continúan viviendo con compañeros de piso con treinta y cinco o cuarenta años. En otros casos, toda la familia ocupa una sola habitación. Para quienes viven así, resulta realmente difícil disponer de tiempo y energía para pensar con calma en cómo cambiar el mundo”.</p>
+
+    <p><strong>Otra indefensión producida por las políticas y la política</strong><br />
+    En los debates que rodean la crisis de los costes de la vivienda aparece con frecuencia la expresión “fracaso de las políticas”. En torno a los topes al alquiler y a los controles de precios se cruzan expectativas y recelos. Unos señalan que una intervención directa sobre el precio de un bien esencial puede reducir la oferta y favorecer la expansión de mercados paralelos; otros sostienen que, si no se interviene en la estructura actual, ninguna mejora resulta verosímil. En estas discusiones se cita a menudo el caso de Estocolmo, en Suecia, donde un régimen muy estricto de regulación de los alquileres habría contribuido a ampliar los circuitos informales y a reforzar la dependencia de los inquilinos respecto a las valoraciones subjetivas de los propietarios.</p>
+
+    <p>Dentro de este intercambio, cuando se repiten victorias simbólicas de carácter institucional mientras la vida cotidiana permanece inmóvil, la población incorpora de manera gradual una forma distinta de indefensión. Se interioriza la idea de que las políticas públicas y la política institucional no transforman la propia existencia. A medida que se constata una y otra vez que los grupos con intereses ligados al mantenimiento o a la subida de los precios de la vivienda y de los alquileres ocupan posiciones de ventaja en la estructura demográfica y electoral, y que muchas de las personas situadas en los puestos clave de parlamentos y gobiernos poseen varias viviendas, para los inquilinos la política deja de aparecer como un instrumento capaz de modificar la realidad y se asemeja más a un espectáculo observado desde lejos.</p>
+
+    <div class="viz-block" id="paycheck-viz">
+      <div class="viz-header">
+        <h3>Quienes viven de nómina en nómina</h3>
+        <p>2025 ADP People At Work · Presión de la nómina y pluriempleo</p>
+      </div>
+      <div class="viz-cards">
+        <div class="viz-card">57%<small>Los trabajadores de España viven de nómina en nómina</small></div>
+        <div class="viz-card">57%<small>Los trabajadores de todo el mundo tienen dificultades para afrontar el coste de la vida</small></div>
+        <div class="viz-card">23%<small>Trabajadores en todo el mundo con dos o más empleos</small></div>
+      </div>
+      <div class="viz-chart-title">Proporción que vive de nómina en nómina</div>
+      <div id="paycheck-chart"></div>
+    </div>
+
+    <p>En esta configuración, los inquilinos caen en un círculo vicioso del que resulta muy difícil salir. José lo expresa así: “Te quedas encerrado dentro de un círculo vicioso. Da igual cuánto trabajes y cuánto intentes aumentar tus ingresos; con ese dinero no consigues comprar una casa y pagar el alquiler ya resulta muy ajustado. Además, como los precios de la vivienda suben tanto, por mucho que ahorres, ese ahorro se queda muy por debajo de lo que necesitarías. Incluso si logras ahorrar más, si los precios siguen subiendo a ese ritmo, con ese dinero no alcanzas ni para la entrada de la casa”.</p>
+
+    <p>Esta realidad no constituye una excepción localizada en una sola ciudad. José comenta: “Se trata de un fenómeno a escala planetaria; no ocurre solo aquí, en Madrid, sino también en Murcia. Yo soy de Murcia y allí sucede lo mismo, y también está pasando en Sevilla. Tú mismo lo estarás viviendo mientras estudias allí, porque cada vez cuesta más encontrar un alquiler asumible. Y algo similar está ocurriendo en otros países europeos”.</p>
+
+    <p>Por otra parte, una de las preguntas que con mayor frecuencia se plantean en torno a la crisis de los costes de la vivienda gira precisamente en torno al fracaso de las políticas. Cada vez que se discuten topes al alquiler o controles de precios, la expectativa y la desconfianza aparecen al mismo tiempo. Se advierte de que, si se introduce sin suficiente cautela una regulación de precios sobre un bien básico como la vivienda, la oferta puede reducirse y el poder de los arrendadores puede reforzarse. De hecho, en Estocolmo se ha relatado que un régimen muy estricto de control de los alquileres favoreció el crecimiento de mercados paralelos, hasta el punto de que los inquilinos debían superar entrevistas con los propietarios para acceder a una vivienda y se generaron listas de espera que se prolongaban durante décadas.</p>
+
+    <div class="embed-block">
+      <iframe src="https://data.worldbank.org/share/widget?indicators=NE.CON.PRVT.CD&locations=US-DE-FR-NL-GB-ES" frameborder="0" scrolling="no"></iframe>
+    </div>
+
+    <p>A medida que las victorias simbólicas se suceden y la realidad permanece casi intacta, la población deja de esperar algo de las instituciones y de la política. Surge entonces la pregunta de por qué una estructura de este tipo apenas se modifica. En el trasfondo se extiende una red de intereses de gran escala. El Estado funciona con ingresos fiscales y el sector inmobiliario constituye uno de los pilares de esa recaudación. En los países que han entrado ya en una fase de envejecimiento muy avanzado, las generaciones que poseen vivienda representan una parte mayor de la población y una fracción considerable de las clases medias y de las personas mayores sostiene la vida tras la jubilación con rentas procedentes del alquiler.</p>
+
+    <p>Si se adopta la perspectiva de los datos, se observa que el grupo social al que beneficia el mantenimiento o el aumento de los precios de la vivienda y de los alquileres se convierte en mayoría. En un entorno así, los representantes políticos terminan canalizando con mayor frecuencia los intereses de quienes poseen vivienda. Los resultados de encuestas que muestran, en varios países, que una proporción significativa de los miembros de los parlamentos acumula más de una vivienda pueden interpretarse en esta misma línea.</p>
+
+    <p>Los grandes propietarios de vivienda en alquiler disponen de capital suficiente para soportar varios años de viviendas vacías, mientras que los propietarios de tamaño intermedio pertenecientes a las clases medias carecen de esa capacidad. Cuando llegan regulaciones sobre los alquileres o una recesión, el primer grupo que se resiente es este. A partir de ahí, se intensifican las presiones sobre los responsables políticos y estos recurren al argumento de la reducción de la oferta y de la inestabilidad del mercado para frenar las políticas destinadas a proteger a los inquilinos.</p>
+
+    <p>A medida que la desigualdad se agrava, también se elevan la tensión social y las formas de polarización política. José lo formula de esta manera: “La gente no reacciona de forma especialmente negativa ante la pobreza como tal. Si en este país fuésemos pobres todos, la reacción no sería tan dura. Lo que provoca una respuesta intensa es la desigualdad”.<br />
+    Y añade: “En la misma calle puede ocurrir que una mujer no pueda dar de comer a su hijo y, al otro lado, un hombre se compre un Porsche. De ahí nace la frustración. Ese sentimiento se desplaza hacia la rabia. Las personas tienden a actuar de manera más violenta. Una sociedad más desigual suele convertirse en una sociedad más violenta”.</p>
+
+    <p>Esa frustración termina por traducirse en el lenguaje de la política. José lo describe así: “Cuando la gente se siente frustrada o, por ejemplo, en momentos de crisis, empieza a perder la confianza, o se aferra únicamente a la idea de estabilidad. Entonces aparece el camino hacia el populismo. Me refiero a quienes proponen ideas fáciles. Si se llena la cabeza de la población con ese tipo de mensajes, al final la gente vota. Mira los casos en los que, en medio de estas crisis, se vota a partidos de extrema derecha: sus programas ofrecen supuestas soluciones simples —entre comillas— para problemas muy complejos, y al final las personas acaban creyendo en cualquier discurso, en cualquier salvador, en cualquier figura mesiánica que se ponga delante. En este sentido, pienso que la forma de democracia occidental que conocemos puede verse amenazada”.</p>
+
+    <p>Las asimetrías de información, de recursos financieros y de poder político consolidan aún más esta arquitectura. La información sobre el mercado del alquiler se concentra sobre todo en el lado de los propietarios, mientras los inquilinos firman los contratos en un entorno donde conocen poco las estrategias de la parte contraria. Los arrendadores cuentan con una gran capacidad de financiación y soportan pérdidas a corto plazo, pero los inquilinos ven peligrar su propia subsistencia cuando el salario se interrumpe o el alquiler aumenta incluso en una proporción limitada. En un extremo se sitúan decenas de millones de personas mayores y propietarios de vivienda, junto con las fuerzas políticas que comparten sus intereses; en el otro, un número relativamente menor de inquilinos jóvenes aparece disperso.</p>
+
+    <p><strong>¿Podemos volver a hablar de la vivienda como un derecho?</strong><br />
+    En diversas encuestas realizadas en varios países europeos se repite un mismo resultado: una parte considerable de la población trabajadora vive al día con el salario, sin margen para el ahorro. Las estadísticas que señalan que en los Países Bajos, Francia, el Reino Unido, Alemania, España y Suiza los trabajadores que no consiguen ahorrar representan una fracción amplia del conjunto muestran que, para los jóvenes de los países de mayor renta, ahorrar y constituir patrimonio se ha convertido ya en una excepción.</p>
+
+    <p>La indefensión aprendida, la financiarización de la vivienda y la red de intereses se engranan entre sí. Para muchas personas, una vida en la que se trabaja para pagar el alquiler y se paga el alquiler para poder seguir trabajando forma ya parte de la normalidad cotidiana. El debate sobre en qué punto interrumpir este círculo y a quién corresponde la responsabilidad de hacerlo todavía no ha comenzado de manera verdaderamente profunda. Lo que sí aparece con nitidez es que, mientras esta realidad se atribuya exclusivamente a la moral individual o a los hábitos de consumo, la estructura no encontrará motivos para rectificarse.</p>
+
+    <p>Queda, en última instancia, una pregunta abierta: si será posible volver a nombrar la vivienda con el lenguaje del derecho y si la rabia y la resignación de los inquilinos podrán desplazarse hacia el registro de la política y de las instituciones.</p>
+  </div>
+
+  <section class="article-tail">
+    <div class="tag-row">
+      <a class="pill-btn" href="#">Explorar más</a>
+      <a class="pill-btn" href="#">Opinión</a>
+      <a class="pill-btn" href="#">Columnas</a>
+      <a class="pill-btn" href="#">Noticia</a>
+      <a class="pill-btn" href="#">Sociedad</a>
+      <a class="pill-btn" href="#">Economía</a>
+    </div>
+
+    <div class="edition-card">
+      <div class="edition-thumb">Edición</div>
+      <div class="edition-meta">
+        <h4>De la edición del 6 de diciembre de 2025</h4>
+        <p>Descubra historias de esta sección y más en el índice de contenidos.</p>
+        <a class="pill-btn" href="#">Explorar la edición</a>
+      </div>
+    </div>
+
+    <div class="share-row">
+      <button class="share-btn">Guardar</button>
+      <button class="share-btn">Compartir</button>
+      <button class="share-btn">Reutilizar este contenido</button>
+    </div>
+
+    <div class="newsletter-box">
+      <h4>Suscríbase a nuestro boletín</h4>
+      <p>Su guía para las agonías de la vida de oficina.</p>
+      <button>Suscribirse</button>
+    </div>
+
+    <div class="more-grid">
+      <div class="more-title">Más en Economía</div>
+      <div class="more-items">
+        <div class="more-card">
+          <h5>¿Destruirá la ola de megafusiones valor para los accionistas?</h5>
+          <p>Es una moneda al aire.</p>
+        </div>
+        <div class="more-card">
+          <h5>Para frenar su declive, Volkswagen y otros miran hacia China</h5>
+          <p>Los fabricantes de automóviles extranjeros están localizando sus operaciones.</p>
+        </div>
+        <div class="more-card">
+          <h5>Patrick Drahi ha vuelto a imponerse a sus acreedores</h5>
+          <p>La reestructuración de deuda más caótica del mundo acaba de ponerse aún más fea.</p>
+        </div>
+        <div class="more-card">
+          <h5>Hasta los fabricantes europeos de bolígrafos están en peligro</h5>
+          <p>Pero una peculiar marca italiana está prosperando.</p>
+        </div>
+        <div class="more-card">
+          <h5>De los microdramas a los videojuegos, el entretenimiento chino vive un auge</h5>
+          <p>¿Cuánta libertad dará el Partido Comunista a los creadores?</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const mapWidth = 1000;
+    const mapHeight = 600;
+    const palette = [getComputedStyle(document.documentElement).getPropertyValue('--palette-1').trim(), getComputedStyle(document.documentElement).getPropertyValue('--palette-2').trim(), getComputedStyle(document.documentElement).getPropertyValue('--palette-3').trim(), getComputedStyle(document.documentElement).getPropertyValue('--palette-4').trim(), getComputedStyle(document.documentElement).getPropertyValue('--palette-5').trim()];
+    const noDataColor = getComputedStyle(document.documentElement).getPropertyValue('--no-data').trim();
+
+    const dataPromise = d3.dsv(";", "data.csv", d => ({
+      YEAR: +d.YEAR,
+      STATE: d.STATE,
+      GRPIP_mean: +d.GRPIP_mean,
+      Prevalence_FrequentMentalDistress: +d.Prevalence_FrequentMentalDistress,
+      Promedio_POORHLTH: +d.Promedio_POORHLTH
+    }));
+
+    const geoPromise = d3.json("us-states.json");
+
+    Promise.all([dataPromise, geoPromise]).then(([data, us]) => {
+      initMetric({
+        key: "grpip",
+        title: "GRPIP_mean",
+        valueField: "GRPIP_mean",
+        data,
+        features: us.features,
+        mapTarget: "#map-grpip",
+        searchToggle: "search-toggle-grpip",
+        searchPanel: "search-panel-grpip",
+        searchInput: "search-input-grpip",
+        searchList: "search-list-grpip",
+        yearSelectBtn: "year-select-btn-grpip",
+        yearDropdown: "year-dropdown-grpip",
+        legendTitleId: "legend-title-grpip",
+        zoomIn: "zoom-in-grpip",
+        zoomOut: "zoom-out-grpip",
+        legendRow: "legend-steps-row-grpip",
+        stateTitle: "state-title-grpip",
+        stateSubtitle: "state-subtitle-grpip",
+        stateValue: "state-value-grpip",
+        stateRank: "state-rank-grpip",
+        topList: "top-states-list-grpip",
+        bottomList: "bottom-states-list-grpip",
+        viewAllBtn: "view-all-btn",
+        modal: "all-states-modal",
+        modalClose: "modal-close-btn",
+        tableBody: "all-states-table-body",
+        trendTarget: "#trend-chart",
+        tooltipClass: "tooltip"
+      });
+
+      initMetric({
+        key: "fmd",
+        title: "Prevalence_FrequentMentalDistress",
+        valueField: "Prevalence_FrequentMentalDistress",
+        data,
+        features: us.features,
+        mapTarget: "#map-fmd",
+        searchToggle: "search-toggle-fmd",
+        searchPanel: "search-panel-fmd",
+        searchInput: "search-input-fmd",
+        searchList: "search-list-fmd",
+        yearSelectBtn: "year-select-btn-fmd",
+        yearDropdown: "year-dropdown-fmd",
+        legendTitleId: "legend-title-fmd",
+        zoomIn: "zoom-in-fmd",
+        zoomOut: "zoom-out-fmd",
+        legendRow: "legend-steps-row-fmd",
+        stateTitle: "state-title-fmd",
+        stateSubtitle: "state-subtitle-fmd",
+        stateValue: "state-value-fmd",
+        stateRank: "state-rank-fmd",
+        topList: "top-states-list-fmd",
+        bottomList: "bottom-states-list-fmd",
+        viewAllBtn: "view-all-btn-fmd",
+        modal: "all-states-modal-fmd",
+        modalClose: "modal-close-btn-fmd",
+        tableBody: "all-states-table-body-fmd",
+        trendTarget: "#trend-chart-fmd",
+        tooltipClass: "tooltip",
+        multiplier: 100
+      });
+
+      initMetric({
+        key: "poorhlth",
+        title: "Promedio_POORHLTH",
+        valueField: "Promedio_POORHLTH",
+        data,
+        features: us.features,
+        mapTarget: "#map-poorhlth",
+        searchToggle: "search-toggle-poorhlth",
+        searchPanel: "search-panel-poorhlth",
+        searchInput: "search-input-poorhlth",
+        searchList: "search-list-poorhlth",
+        yearSelectBtn: "year-select-btn-poorhlth",
+        yearDropdown: "year-dropdown-poorhlth",
+        legendTitleId: "legend-title-poorhlth",
+        zoomIn: "zoom-in-poorhlth",
+        zoomOut: "zoom-out-poorhlth",
+        legendRow: "legend-steps-row-poorhlth",
+        stateTitle: "state-title-poorhlth",
+        stateSubtitle: "state-subtitle-poorhlth",
+        stateValue: "state-value-poorhlth",
+        stateRank: "state-rank-poorhlth",
+        topList: "top-states-list-poorhlth",
+        bottomList: "bottom-states-list-poorhlth",
+        viewAllBtn: "view-all-btn-poorhlth",
+        modal: "all-states-modal-poorhlth",
+        modalClose: "modal-close-btn-poorhlth",
+        tableBody: "all-states-table-body-poorhlth",
+        trendTarget: "#trend-chart-poorhlth",
+        tooltipClass: "tooltip"
+      });
+    }).catch(err => console.error("데이터 불러오기 중 오류:", err));
+
+    function initMetric(opts) {
+      const {
+        title,
+        valueField,
+        data,
+        features,
+        mapTarget,
+        searchToggle,
+        searchPanel,
+        searchInput,
+        searchList,
+        yearSelectBtn,
+        yearDropdown,
+        legendTitleId,
+        zoomIn,
+        zoomOut,
+        legendRow,
+        stateTitle,
+        stateSubtitle,
+        stateValue,
+        stateRank,
+        topList,
+        bottomList,
+        viewAllBtn,
+        modal,
+        modalClose,
+        tableBody,
+        trendTarget,
+        tooltipClass,
+        multiplier = 1
+      } = opts;
+
+      const svg = d3.select(mapTarget)
+        .append("svg")
+        .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`)
+        .style("width", "100%")
+        .style("height", "auto");
+
+      const mapGroup = svg.append("g");
+
+      const projection = d3.geoAlbersUsa()
+        .translate([mapWidth / 2, mapHeight / 2])
+        .scale(1200);
+
+      const path = d3.geoPath(projection);
+      const tooltip = d3.select("body").append("div").attr("class", tooltipClass);
+
+      const stateTitleEl = document.getElementById(stateTitle);
+      const stateSubtitleEl = document.getElementById(stateSubtitle);
+      const stateValueEl = document.getElementById(stateValue);
+      const stateRankEl = document.getElementById(stateRank);
+
+      const searchToggleBtn = document.getElementById(searchToggle);
+      const searchPanelEl = document.getElementById(searchPanel);
+      const searchInputEl = document.getElementById(searchInput);
+      const searchListSel = d3.select("#" + searchList);
+
+      const yearSelectBtnEl = document.getElementById(yearSelectBtn);
+      const yearDropdownEl = document.getElementById(yearDropdown);
+      const legendTitleEl = document.getElementById(legendTitleId);
+
+      const topListSel = d3.select("#" + topList);
+      const bottomListSel = d3.select("#" + bottomList);
+      const viewAllBtnEl = document.getElementById(viewAllBtn);
+      const modalEl = document.getElementById(modal);
+      const modalCloseBtn = document.getElementById(modalClose);
+      const allStatesTbody = d3.select("#" + tableBody);
+
+      let rankByState = new Map();
+      let valueByState = new Map();
+      let totalStates = 0;
+      let lastSelectedState = null;
+      let sortedData = [];
+      let color = null;
+
+      const availableYears = Array.from(
+        new Set(
+          data
+            .filter(d => !isNaN(d[valueField]))
+            .map(d => d.YEAR)
+        )
+      ).sort((a, b) => b - a);
+
+      let selectedYear = availableYears[0] || 2023;
+
+      prepareYearData(selectedYear);
+
+      function prepareYearData(year) {
+        const yearData = data
+          .filter(d => d.YEAR === year && !isNaN(d[valueField]))
+          .map(d => ({ ...d, _value: d[valueField] * multiplier }));
+
+        // Descending sort so highest value = rank 1
+        sortedData = yearData.slice().sort((a, b) => b._value - a._value);
+        totalStates = sortedData.length;
+        rankByState = new Map();
+        valueByState = new Map(sortedData.map(d => [d.STATE, d._value]));
+        sortedData.forEach((d, i) => {
+          rankByState.set(d.STATE, i + 1);
+          d.rank = i + 1;
+        });
+
+        const values = Array.from(valueByState.values()).filter(v => !isNaN(v));
+        const minVal = d3.min(values);
+        const maxVal = d3.max(values);
+        const domainMin = minVal == null ? 0 : minVal;
+        const domainMax = maxVal == null ? domainMin + 1 : (maxVal === domainMin ? domainMin + 1 : maxVal);
+
+        color = d3.scaleQuantize()
+          .domain([domainMin, domainMax])
+          .range(palette);
+      }
+
+      const zoomBehavior = d3.zoom()
+        .scaleExtent([1, 8])
+        .translateExtent([[0, 0], [mapWidth, mapHeight]])
+        .on("zoom", (event) => {
+          mapGroup.attr("transform", event.transform);
+          currentTransform = event.transform;
+        });
+
+      let currentTransform = d3.zoomIdentity;
+      svg.call(zoomBehavior);
+
+      document.getElementById(zoomIn).addEventListener("click", () => {
+        svg.transition().duration(200).call(zoomBehavior.scaleBy, 1.2);
+      });
+      document.getElementById(zoomOut).addEventListener("click", () => {
+        svg.transition().duration(200).call(zoomBehavior.scaleBy, 0.8);
+      });
+
+      mapGroup.selectAll("path")
+        .data(features)
+        .join("path")
+        .attr("class", "state")
+        .attr("d", path)
+        .attr("fill", d => {
+          const stateName = d.properties.NAME;
+          const v = valueByState.get(stateName);
+          return (v == null || isNaN(v)) ? noDataColor : color(v);
+        })
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 0.6)
+        .on("mouseover", function(event, d) {
+          const stateName = d.properties.NAME;
+          const v = valueByState.get(stateName);
+          const rank = rankByState.get(stateName);
+
+          d3.select(this).attr("stroke-width", 1.4);
+
+          if (v == null || isNaN(v)) {
+            tooltip.style("opacity", 1).html(`<strong>${stateName}</strong><br>Sin datos del año`);
+          } else {
+            tooltip
+              .style("opacity", 1)
+              .html(
+                `<strong>${stateName}</strong><br>` +
+                `Año ${selectedYear} ${title}: ${v.toFixed(1)} %<br>` +
+                `Rank: ${rank} / ${totalStates}`
+              );
+          }
+        })
+        .on("mousemove", function(event) {
+          tooltip
+            .style("left", (event.pageX + 12) + "px")
+            .style("top", (event.pageY - 32) + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(this).attr("stroke-width", d => {
+            const name = d.properties.NAME;
+            return (lastSelectedState && name === lastSelectedState) ? 2 : 0.6;
+          });
+          tooltip.style("opacity", 0);
+        })
+        .on("click", function(event, d) {
+          const stateName = d.properties.NAME;
+          selectStateByName(stateName);
+        });
+
+      function updateStateCard(stateName) {
+        const value = valueByState.get(stateName);
+        const rank = rankByState.get(stateName);
+        stateTitleEl.textContent = stateName;
+
+        if (value == null || isNaN(value)) {
+          stateSubtitleEl.textContent = `No hay datos del año ${selectedYear} para el estado seleccionado.`;
+          stateValueEl.textContent = "-";
+          stateRankEl.textContent = "-";
+        } else {
+          stateSubtitleEl.textContent = `Muestra el del ${title} año ${selectedYear} y su posición dentro del conjunto de estados.`;
+          stateValueEl.textContent = value.toFixed(1) + " %";
+          stateRankEl.textContent = rank + " / " + totalStates;
+        }
+      }
+
+      function selectStateByName(stateName) {
+        if (!stateName) return;
+        stateName = stateName.trim();
+        if (!stateName) return;
+        updateStateCard(stateName);
+
+        mapGroup.selectAll("path.state")
+          .attr("stroke-width", d => d.properties.NAME === stateName ? 2 : 0.6)
+          .attr("stroke", d => d.properties.NAME === stateName ? "#1b2a3c" : "#ffffff");
+
+        lastSelectedState = stateName;
+      }
+
+      searchToggleBtn.addEventListener("click", () => {
+        const open = !searchPanelEl.classList.contains("open");
+        if (open) {
+          searchPanelEl.classList.add("open");
+          searchInputEl.focus();
+        } else {
+          searchPanelEl.classList.remove("open");
+        }
+      });
+
+      const stateNames = Array.from(new Set(data.map(d => d.STATE)))
+        .sort((a, b) => d3.ascending(a, b));
+
+      searchInputEl.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          const typed = e.target.value;
+          if (!typed) return;
+          const match = stateNames.find(name => name.toLowerCase() === typed.trim().toLowerCase());
+          if (match) selectStateByName(match);
+        }
+      });
+
+      searchListSel.selectAll("button")
+        .data(stateNames)
+        .join("button")
+        .text(d => d)
+        .on("click", (event, d) => selectStateByName(d));
+
+      function updateRankLists() {
+        const top5 = sortedData.slice(0, 5);
+        const bottom5 = sortedData.slice(-5); // lowest values
+        renderRanking(topListSel, top5, rankByState, selectStateByName);
+        renderRanking(bottomListSel, bottom5, rankByState, selectStateByName);
+      }
+
+      function refreshMapColors() {
+        mapGroup.selectAll("path.state")
+          .attr("fill", d => {
+            const stateName = d.properties.NAME;
+            const v = valueByState.get(stateName);
+            return (v == null || isNaN(v)) ? noDataColor : color(v);
+          })
+          .attr("stroke-width", d => {
+            const name = d.properties.NAME;
+            return (lastSelectedState && name === lastSelectedState) ? 2 : 0.6;
+          })
+          .attr("stroke", d => {
+            const name = d.properties.NAME;
+            return (lastSelectedState && name === lastSelectedState) ? "#1b2a3c" : "#ffffff";
+          });
+      }
+
+      function updateYear(year) {
+        selectedYear = year;
+        yearSelectBtnEl.textContent = `${year} ▼`;
+        legendTitleEl.textContent = `Año ${year} ${title}`;
+        prepareYearData(year);
+        renderLegend(legendRow, color);
+        refreshMapColors();
+        updateRankLists();
+
+        if (lastSelectedState) {
+          updateStateCard(lastSelectedState);
+        } else {
+          stateSubtitleEl.textContent = `Muestra el ${title} del año ${selectedYear} y su posición dentro del conjunto de estados.`;
+          stateValueEl.textContent = "-";
+          stateRankEl.textContent = "-";
+        }
+      }
+
+      function renderYearDropdown() {
+        yearDropdownEl.innerHTML = "";
+        availableYears.forEach(year => {
+          const btn = document.createElement("button");
+          btn.textContent = year;
+          btn.addEventListener("click", () => {
+            yearDropdownEl.classList.remove("open");
+            updateYear(year);
+          });
+          yearDropdownEl.appendChild(btn);
+        });
+      }
+
+      yearSelectBtnEl.addEventListener("click", () => {
+        yearDropdownEl.classList.toggle("open");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!yearDropdownEl.contains(e.target) && e.target !== yearSelectBtnEl) {
+          yearDropdownEl.classList.remove("open");
+        }
+      });
+
+      renderYearDropdown();
+      updateYear(selectedYear);
+
+      viewAllBtnEl.addEventListener("click", () => {
+        allStatesTbody.selectAll("tr")
+          .data(sortedData) // already sorted high to low
+          .join("tr")
+          .each(function(d) {
+            const tr = d3.select(this);
+            tr.selectAll("*").remove();
+
+            tr.append("td")
+              .append("button")
+              .attr("class", "modal-state-button")
+              .text(d.STATE)
+              .on("click", () => {
+                selectStateByName(d.STATE);
+                modalEl.classList.remove("open");
+              });
+
+            tr.append("td")
+              .attr("class", "td-right")
+              .text(rankByState.get(d.STATE));
+
+            tr.append("td")
+              .attr("class", "td-right")
+              .text(d._value.toFixed(1) + " %");
+          });
+
+        modalEl.classList.add("open");
+      });
+
+      modalCloseBtn.addEventListener("click", () => modalEl.classList.remove("open"));
+      modalEl.addEventListener("click", e => { if (e.target === modalEl) modalEl.classList.remove("open"); });
+
+      const byYear = d3.rollups(
+        data.filter(d => !isNaN(d[valueField])),
+        v => d3.mean(v, d => d[valueField] * multiplier),
+        d => d.YEAR
+      );
+
+      const trendData = byYear
+        .map(([year, value]) => ({ year: +year, value }))
+        .sort((a, b) => a.year - b.year);
+
+      drawTrendChart(trendTarget, trendData, title);
+    }
+
+    function renderLegend(rowId, colorScale) {
+      const thresholds = colorScale.thresholds();
+      const domain = colorScale.domain();
+      const steps = [];
+      let prev = domain[0];
+      thresholds.forEach((t, i) => {
+        steps.push([prev, t]);
+        prev = t;
+      });
+      steps.push([prev, domain[1]]);
+
+      const row = d3.select("#" + rowId);
+      const stepSel = row.selectAll(".legend-step")
+        .data(steps.concat([["No Data", "No Data"]]));
+
+      const enter = stepSel.enter()
+        .append("div")
+        .attr("class", "legend-step");
+
+      enter.append("div").attr("class", "legend-chip");
+      enter.append("div").attr("class", "legend-label");
+
+      const merged = enter.merge(stepSel);
+
+      merged.each(function(d, i) {
+        const chip = d3.select(this).select(".legend-chip");
+        const label = d3.select(this).select(".legend-label");
+        if (d[0] === "No Data") {
+          chip.style("background", noDataColor);
+          label.text("No Data");
+        } else {
+          const colorVal = colorScale((d[0] + d[1]) / 2);
+          chip.style("background", colorVal);
+          label.text(`${d[0].toFixed(1)} - ${d[1].toFixed(1)}%`);
+        }
+      });
+
+      stepSel.exit().remove();
+    }
+
+    function renderRanking(listSel, arr, rankMap, onSelect) {
+      const items = listSel.selectAll("li").data(arr).join("li");
+      items.selectAll("*").remove();
+      items.each(function(d) {
+        const li = d3.select(this);
+        li.append("button").text(d.STATE).on("click", () => onSelect(d.STATE));
+        li.append("span").attr("class", "ranking-rank").text(() => rankMap.get(d.STATE));
+        li.append("span").attr("class", "ranking-value").text(() => d._value.toFixed(1) + " %");
+      });
+    }
+
+    function drawTrendChart(targetSelector, trendData, title) {
+      const margin = { top: 20, right: 24, bottom: 40, left: 56 };
+      const width = 960;
+      const height = 320;
+
+      const svg = d3.select(targetSelector)
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("width", "100%")
+        .style("height", "auto");
+
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+
+      const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // 2020년 데이터 제외 + 좌측 라벨 겹침 방지를 위한 패딩
+      const filtered = trendData.filter(d => d.year !== 2020);
+      const years = filtered.map(d => d.year);
+
+      const x = d3.scalePoint()
+        .domain(years)
+        .range([0, innerWidth])
+        .padding(0.5);
+
+      const yMin = title === "GRPIP_mean" ? 30 : 0;
+
+      const y = d3.scaleLinear()
+        .domain([yMin, d3.max(filtered, d => d.value) * 1.1])
+        .nice()
+        .range([innerHeight, 0]);
+
+      const xAxis = d3.axisBottom(x)
+        .tickValues(years)
+        .tickFormat(d3.format("d"));
+
+      const yAxis = d3.axisLeft(y)
+        .ticks(6)
+        .tickFormat(d => d.toFixed(1) + " %");
+
+      g.append("g")
+        .attr("stroke", "#e5e8ec")
+        .attr("stroke-opacity", 1)
+        .call(gGrid => gGrid
+          .selectAll("line")
+          .data(y.ticks(6))
+          .join("line")
+          .attr("x1", 0)
+          .attr("x2", innerWidth)
+          .attr("y1", d => y(d))
+          .attr("y2", d => y(d))
+        );
+
+      g.append("g")
+        .attr("transform", `translate(0,${innerHeight})`)
+        .call(xAxis)
+        .call(gAxis => gAxis.selectAll("text").attr("font-size", 11));
+
+      g.append("g")
+        .call(yAxis)
+        .call(gAxis => gAxis.selectAll("text").attr("font-size", 11));
+
+      const line = d3.line()
+        .x(d => x(d.year))
+        .y(d => y(d.value));
+
+      g.append("path")
+        .datum(filtered)
+        .attr("fill", "none")
+        .attr("stroke", "#0f4c81")
+        .attr("stroke-width", 2)
+        .attr("d", line);
+
+      g.selectAll("circle")
+        .data(filtered)
+        .join("circle")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.value))
+        .attr("r", 3.5)
+        .attr("fill", "#0f4c81");
+
+      g.append("text")
+        .attr("x", -innerHeight / 2)
+        .attr("y", -42)
+        .attr("transform", "rotate(-90)")
+        .attr("text-anchor", "middle")
+        .attr("font-size", 11)
+        .attr("fill", "#555")
+        .text(`Average ${title} (%)`);
+
+      g.append("text")
+        .attr("x", innerWidth / 2)
+        .attr("y", innerHeight + 32)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 11)
+        .attr("fill", "#555")
+        .text("Year");
+    }
+  </script>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-shell">
+    <div class="footer-links">
+      <div>
+        <h6>Cibercultura</h6>
+        <a href="#">Acerca de</a>
+        <a href="#">Reutilizar nuestro contenido</a>
+        <a href="#">Suscripción</a>
+        <a href="#">Cibercultura Pro</a>
+        <a href="#">SecureDrop</a>
+      </div>
+      <div>
+        <h6>Cibercultura Group</h6>
+        <a href="#">Cibercultura Insights</a>
+        <a href="#">Cibercultura Impact</a>
+        <a href="#">Cibercultura Impact Events</a>
+        <a href="#">Education Courses</a>
+      </div>
+      <div>
+        <h6>Contacto</h6>
+        <a href="#">Ayuda y asistencia</a>
+        <a href="#">Publicidad</a>
+        <a href="#">Centro de prensa</a>
+        <a href="#">Programa de afiliados</a>
+      </div>
+      <div>
+        <h6>Empleo</h6>
+        <a href="#">Trabajar aquí</a>
+        <a href="#">Puestos ejecutivos</a>
+      </div>
+    </div>
+    <div class="footer-meta">
+      © Cibercultura 2025 · Términos · Privacidad · Cookies
+    </div>
+  </div>
+</footer>
+</body>
+</html>
