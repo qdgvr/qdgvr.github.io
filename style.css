@@ -1,0 +1,370 @@
+
+  /* ====== 상단 언론 스타일 헤더 전용 CSS ====== */
+
+  .site-header {
+    /* body 패딩(32px 28px)을 상쇄해서 화면 끝까지 붙게 함 */
+    margin: -32px -28px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  /* 위쪽 회색 뉴스 스트립 */
+  .header-top {
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 12px;
+    color: #777;
+  }
+
+  .header-top-inner,
+  .header-main-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6px 18px;
+    display: flex;
+    align-items: center;
+  }
+
+  .header-top-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 10px;
+  }
+
+  .header-top-links {
+    list-style: none;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+  }
+
+  .header-top-links li {
+    white-space: nowrap;
+    padding-left: 10px;
+    border-left: 1px solid #d0d0d0;
+  }
+
+  .header-top-links a {
+    text-decoration: none;
+    color: #777;
+  }
+
+  /* 메인 헤더 (로고 + 카테고리 + 버튼) */
+  .header-main {
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  }
+
+  .header-main-inner {
+    justify-content: space-between;
+    padding: 10px 18px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .header-logo-link img {
+    display: block;
+    height: 32px;   /* 로고 크기: 여기서 조절 */
+    width: auto;
+  }
+
+  .main-nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 16px;
+  }
+
+  .main-nav a,
+  .main-nav button {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    color: #111;
+    white-space: nowrap;
+  }
+
+  .main-nav a:hover,
+  .main-nav button:hover {
+    color: #0f4c81;
+  }
+
+  .nav-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-menu-icon {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .nav-menu-icon span {
+    display: block;
+    width: 14px;
+    height: 2px;
+    background: #111;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+  }
+
+  .header-subscribe {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    background: #008c6f;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .header-subscribe span {
+    font-weight: 900;
+    margin: 0 2px;
+  }
+
+  .header-subscribe:hover {
+    background: #00715c;
+  }
+
+  .header-login {
+    border: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+    color: #111;
+    white-space: nowrap;
+  }
+
+  .header-login:hover {
+    color: #0f4c81;
+  }
+
+  @media (max-width: 960px) {
+    .site-header {
+      margin: -20px -14px 14px;
+    }
+
+    .header-top-inner,
+    .header-main-inner {
+      padding: 6px 12px;
+    }
+
+    .header-left {
+      gap: 14px;
+    }
+
+    .main-nav {
+      gap: 14px;
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .main-nav a:nth-child(n+3) {
+      display: none;
+    }
+  }
+
+body {
+  font-family: sans-serif;
+  margin: 20px;
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+#map {
+  width: 100%;
+  max-width: 900px;
+  margin-top: 20px;
+}
+
+/* SVG가 화면 크기에 맞게 줄었다 늘었다 할 수 있게 */
+svg {
+  width: 100%;
+  height: auto;
+}
+
+/* 툴팁 스타일 */
+.tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #999;
+  padding: 5px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-size: 14px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+#map-container {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* 돋보기 버튼 */
+.search-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  border: none;
+  background: #005c99;
+  color: #ffffff;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 검색 패널 */
+.search-panel {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  width: 340px;
+  max-height: 420px;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.hidden {
+  display: none;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.search-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 6px 10px;
+  background: #005c99;
+  border-radius: 4px;
+}
+
+.search-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #cccccc;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+/* 주 리스트 */
+.state-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  max-height: 160px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+}
+
+.state-item {
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.state-item:hover {
+  background: #f2f8ff;
+}
+
+/* 선택된 주 정보 카드 */
+.state-info {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e5e5;
+  font-size: 14px;
+}
+
+.state-info-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.state-info-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.state-info-box {
+  flex: 1 1 140px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+.state-info-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #666666;
+  margin-bottom: 4px;
+}
+
+.state-info-value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 지도에서 선택된 주 스타일 */
+.selected-state {
+  stroke: #000000;
+  stroke-width: 2px;
+}
+
