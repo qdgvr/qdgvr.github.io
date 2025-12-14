@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pérdida de retroalimentación en una sociedad de alquileres</title>
+  <title>Cuando el alquiler ya no responde al esfuerzo: evidencia desde EE. UU.</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -225,6 +225,34 @@
       cursor: pointer;
     }
     .save-share button:hover { background: #202020; }
+    .summary-audio {
+      margin: 6px 0 24px;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--panel-dark);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .summary-audio[hidden] { display: none; }
+    .summary-audio audio {
+      width: 100%;
+      max-width: 520px;
+      background: #0f0f0f;
+      border-radius: 8px;
+    }
+    .audio-close {
+      border: 1px solid var(--border);
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .audio-close:hover { background: #202020; }
     .map-stack {
       display: flex;
       flex-direction: column;
@@ -851,7 +879,22 @@
       <div class="save-share">
         <button aria-label="Guardar">Guardar</button>
         <button aria-label="Compartir">Compartir</button>
+        <button aria-label="Resumen">Resumen</button>
       </div>
+      <div class="summary-audio" id="summary-audio-index" hidden>
+        <audio id="summary-audio-element-index" controls preload="auto">
+          <source src="Estados Unidos.m4a" type="audio/mp4">
+          Tu navegador no soporta el elemento de audio.
+        </audio>
+        <button class="audio-close" id="summary-audio-close-index" aria-label="Cerrar resumen">Cerrar</button>
+      </div>
+    </section>
+
+    <section class="article-intro">
+      <p class="article-body">La presión estructural de los alquileres en Estados Unidos se asocia a más días de vida cotidiana “cancelada” por motivos de salud, a través de una capa gruesa de estrés crónico, pero también mediante vías directas que el modelo solo alcanza a captar de forma parcial</p>
+      <p class="article-body">Analizamos cómo la presión de la vivienda en alquiler se relaciona con el malestar mental y con los días en los que la población de Estados Unidos deja de hacer su vida habitual por motivos de salud. La unidad de observación son los 50 Estados y Washington D.C, y el periodo se extiende de mediados de la década de 2010 hasta 2019 y desde 2021 hasta 2023. El resultado central indica que allí donde la vivienda en alquiler exige una parte elevada del presupuesto de los hogares, el malestar mental tiende a ser más frecuente y los días de vida cotidiana interrumpida se acumulan, aunque la relación entre estos elementos no se reduce a una cadena sencilla y única.</p>
+      <p class="article-body">El punto de partida teórico adopta una mirada socio-cibernética. La persona se concibe como un sistema de control que compara su situación actual con un objetivo básico de estabilidad residencial. Mientras el entorno mantiene una proporcionalidad mínima entre esfuerzo e ingresos, el sistema recibe señales que indican que las correcciones sirven para algo. En cambio, cuando la vivienda en alquiler se encarece de forma persistente o cuando los precios suben sin vínculo claro con la capacidad económica de los hogares, la experiencia acumulada transmite otro mensaje: por mucho que se trabaje, la seguridad habitacional permanece lejos. La señal de error no se corrige, se convierte en tensión crónica y termina por erosionar la energía necesaria para sostener la vida diaria y, por extensión, cualquier forma de acción colectiva.</p>
+      <p class="article-body">El estudio traduce este marco a datos mediante un panel de 51 jurisdicciones estatales y nueve años, construido con microdatos de la encuesta de población del Census Bureau y con información de salud de la gran encuesta telefónica sobre factores de riesgo. A partir de los ficheros de hogares se estima, para cada Estado y cada año, qué parte de la renta disponible se destina al pago de la vivienda en alquiler, y a partir de los ficheros de salud se calcula la proporción de adultos que declaran muchos días de malestar mental y el número medio de jornadas en las que la mala salud impide realizar actividades habituales. El conjunto se organiza en una base de datos que permite observar diferencias persistentes entre Estados y cambios internos a lo largo del tiempo.</p>
     </section>
 
     <section class="map-stack">
@@ -1237,6 +1280,26 @@
     </div>
     <div class="footer-meta">© Cibercultura 2025 · Términos · Privacidad · Cookies</div>
   </footer>
+
+  <script>
+    (function() {
+      const trigger = document.querySelector('.save-share button[aria-label="Resumen"]');
+      const bar = document.getElementById('summary-audio-index');
+      const closeBtn = document.getElementById('summary-audio-close-index');
+      const audioEl = document.getElementById('summary-audio-element-index');
+      if (!trigger || !bar || !closeBtn || !audioEl) return;
+
+      trigger.addEventListener('click', () => {
+        bar.hidden = false;
+        audioEl.focus();
+      });
+
+      closeBtn.addEventListener('click', () => {
+        audioEl.pause();
+        bar.hidden = true;
+      });
+    })();
+  </script>
 
   <script>
     const mapWidth = 1000;
